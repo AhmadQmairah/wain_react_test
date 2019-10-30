@@ -5,9 +5,11 @@ import socketIOClient from "socket.io-client";
 
 class App extends React.Component {
   //Initialize the connection to the server
-  state = null;
-  Categories = [];
-  Flavours = [];
+  state = {
+    tags: [],
+    selectedTags: []
+  };
+
   socket1 = socketIOClient("192.168.100.232");
   join() {
     this.socket1.emit("join", {
@@ -15,39 +17,23 @@ class App extends React.Component {
       name: "Ahmad"
     });
   }
-  sendShit() {
-    this.socket1.emit("hi", {
-      id: "2"
-    });
-  }
+
   submitAnswer() {
-    console.log(this.refs.cats.value, this.refs.flavs.value);
     this.socket1.emit("quiz_submit", {
-      categories: this.Categories,
-      flavour: this.Flavours,
-      budget: 4
+      tags: this.state.selectedTags,
+
+      budget: parseInt(this.refs.budget.value)
     });
   }
-  addCategory() {
-    this.Categories.push({
-      category: parseInt(this.refs.cats.value),
-      like: parseInt(this.refs.like.value)
-    });
-  }
-  addFlavour() {
-    this.Flavours.push({
-      flavour: parseInt(this.refs.flavs.value),
-      like: parseInt(this.refs.like.value)
-    });
-    console.log(this.Flavours);
+  addTag() {
+    this.state.selectedTags.push(parseInt(this.refs.tags.value));
   }
 
   render() {
-    let categories;
-    let flavours;
-    let filteredRestaurants;
+    let tags;
+
     this.socket1.on("quiz", data => {
-      !this.state && this.setState(data);
+      !this.state.tags.length && this.setState({ tags: data.tags });
     });
     this.socket1.on("filtered_rest", data => {
       this.setState({
@@ -56,27 +42,31 @@ class App extends React.Component {
         ))
       });
     });
-    if (this.state) {
-      categories = this.state.categories.map(cat => (
+    console.log(this.state.tags);
+    if (this.state.tags.length)
+      tags = this.state.tags.map(cat => (
         <option value={cat.id}>{cat.name}</option>
       ));
-      flavours = this.state.flavours.map(cat => (
-        <option value={cat.id}>{cat.name}</option>
-      ));
-    }
+
     return (
       <div className="App">
         <button onClick={() => this.join()}>Join room</button>
-        <button onClick={() => this.sendShit()}>Send shit</button>
-        <select ref="cats">{categories}</select>
-        <select ref="flavs">{flavours}</select>
+
+        <select ref="tags">{tags}</select>
+
         <select ref="like">
           <option value={1}>like</option> <option value={0}>dont care</option>{" "}
           <option value={-1}>hate</option>
         </select>
+        <select ref="budget">
+          <option value={1}>$</option>
+          <option value={2}>$$</option>
+          <option value={3}>$$$</option>
+          <option value={4}>$$$$</option>
+        </select>
+        <button onClick={() => this.addTag()}>Add tag</button>
         <button onClick={() => this.submitAnswer()}>Submit Answer</button>
-        <button onClick={() => this.addCategory()}>Add Category</button>
-        <button onClick={() => this.addFlavour()}>Add Flavour</button>
+
         <button onClick={() => this.socket1.emit("end")}>End</button>
         <br />
         {this.state ? (
